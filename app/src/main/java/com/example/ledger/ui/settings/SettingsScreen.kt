@@ -397,7 +397,7 @@ private fun SettingRow(
 private fun AboutDialog(version: String, onDismiss: () -> Unit) {
     Dialog(onDismissRequest = onDismiss) {
         Surface(
-            shape = AppShapes.sheet,
+            shape = AppShapes.bottomSheet,
             color = MaterialTheme.colorScheme.surfaceContainerHigh,
             tonalElevation = 6.dp,
         ) {

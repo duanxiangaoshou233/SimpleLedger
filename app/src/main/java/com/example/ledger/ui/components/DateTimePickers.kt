@@ -104,7 +104,7 @@ fun LedgerTimePickerDialog(
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(
-            shape = AppShapes.sheet,
+            shape = AppShapes.bottomSheet,
             color = MaterialTheme.colorScheme.surfaceContainerHigh,
             tonalElevation = 6.dp,
         ) {

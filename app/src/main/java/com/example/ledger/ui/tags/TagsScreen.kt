@@ -272,7 +272,7 @@ private fun TagEditorDialog(
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(
-            shape = AppShapes.sheet,
+            shape = AppShapes.bottomSheet,
             color = MaterialTheme.colorScheme.surfaceContainerHigh,
             tonalElevation = 6.dp,
         ) {
@@ -389,7 +389,7 @@ private fun TagDeleteDialog(
 ) {
     Dialog(onDismissRequest = onDismiss) {
         Surface(
-            shape = AppShapes.sheet,
+            shape = AppShapes.bottomSheet,
             color = MaterialTheme.colorScheme.surfaceContainerHigh,
             tonalElevation = 6.dp,
         ) {
