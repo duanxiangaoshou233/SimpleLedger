@@ -3,14 +3,16 @@
 # 用法（不用装任何开发环境）：
 #   1) 在 GitHub 新建仓库（建议 Public：Actions 免费不限时长，Release 附件手机可直接下）
 #   2) 把本项目【SimpleLedger 目录里的内容】作为仓库根目录推上去
-#      （仓库根必须能看到 settings.gradle.kts、app/、gradle/、build.gradle.kts）
 #   3) push 到 main 后自动构建，约 4-6 分钟
-#   4) 出包后两种下载方式：
-#      · 手机：仓库首页右侧 Releases → 点最新版本 → 下 app-debug.apk
-#      · 电脑：Actions → 本次运行 → 底部 Artifacts（zip，解压得到 apk）
+#   4) 下载：
+#      · 手机：仓库首页右侧 Releases → 点最新版本 → app-debug.apk
+#      · 电脑：Actions → 本次运行 → Artifacts（zip，解压得到 apk）
 #
-# 如果失败：运行页顶部的 【Summary】 会直接列出编译错误（本文件最后一个 step 负责提取），
-#          把那段贴给开发者即可，不需要在几千行日志里翻。
+# 两个任务相互独立、并行执行：
+#   [构建 APK] 只负责出包  ← 这才是你要的；它绿了就一定有 APK
+#   [单元测试] 只负责质量  ← 它红了不影响 APK，可以照常下载安装
+#
+# 失败时不用翻日志：运行页顶部的 Summary 会直接列出编译/测试错误。
 #
 # 注意：CI 每次都用新的 debug 签名，因此【新包不能覆盖安装旧包】，覆盖前先在手机上卸载旧版。
 
@@ -30,7 +32,11 @@ permissions:
   contents: write   # 创建 Release 需要
 
 jobs:
+  # ==========================================================================
+  # 任务一：出 APK（唯一目标）
+  # ==========================================================================
   build:
+    name: 构建 APK
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -50,7 +56,6 @@ jobs:
         with:
           gradle-version: '8.7'
 
-      # ---- 编译：允许失败，以便后续步骤把错误提取出来 ----
       - name: Build debug APK
         id: compile
         continue-on-error: true
@@ -58,7 +63,6 @@ jobs:
           set -o pipefail
           gradle assembleDebug --no-daemon --stacktrace 2>&1 | tee gradle-build.log
 
-      # ---- 把真正的错误写进 Summary（运行页顶部就能看到）----
       - name: Summarize build errors
         if: steps.compile.outcome == 'failure'
         run: |
@@ -71,12 +75,8 @@ jobs:
             echo ''
             echo '===== Gradle / 配置错误 ====='
             grep -E '^(FAILURE:|Caused by:|\* What went wrong:|> Task .* FAILED|Execution failed|Unresolved reference|error:)' gradle-build.log | head -40 || true
-            echo ''
-            echo '===== 第一处 FAILURE 的上下文 ====='
-            grep -n -B 2 -A 18 'FAILURE: Build' gradle-build.log | head -50 || true
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
-
           echo '::error::构建失败，错误已提取到本页 Summary'
 
       - name: Upload build log
@@ -92,7 +92,6 @@ jobs:
         if: steps.compile.outcome == 'failure'
         run: exit 1
 
-      # ---- 以下只在编译成功后执行 ----
       - name: Upload APK artifact
         if: steps.compile.outcome == 'success'
         uses: actions/upload-artifact@v4
@@ -116,9 +115,52 @@ jobs:
             - 若手机上已有旧版本，请先卸载再装（CI 每次签名不同）
           files: app/build/outputs/apk/debug/app-debug.apk
 
+  # ==========================================================================
+  # 任务二：单元测试（与出包并行，失败不影响 APK）
+  # ==========================================================================
+  test:
+    name: 单元测试
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle 8.7
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7'
+
       - name: Run unit tests
-        if: steps.compile.outcome == 'success'
-        run: gradle testDebugUnitTest --no-daemon
+        id: tests
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          gradle testDebugUnitTest --no-daemon --stacktrace 2>&1 | tee gradle-test.log
+
+      - name: Summarize test problems
+        if: steps.tests.outcome == 'failure'
+        run: |
+          {
+            echo '## 单元测试未通过（不影响 APK 下载）—— 请把下面这段发给开发者'
+            echo ''
+            echo '```text'
+            echo '===== 测试代码编译错误 (e: ...) ====='
+            grep -E '^e: ' gradle-test.log | head -40 || true
+            echo ''
+            echo '===== 失败/异常 ====='
+            grep -E '^(FAILURE:|> Task .* FAILED|.*FAILED$|[0-9]+ tests? completed.*failed)' gradle-test.log | head -30 || true
+            grep -E '(expected:|AssertionError|ComparisonFailure)' gradle-test.log | head -30 || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo '::warning::单元测试未通过；APK 已在 [构建 APK] 任务中产出，可正常下载安装'
 
       - name: Upload test report
         if: always()
@@ -128,6 +170,19 @@ jobs:
           path: app/build/reports/tests/testDebugUnitTest
           if-no-files-found: ignore
           retention-days: 7
+
+      - name: Upload test log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gradle-test-log
+          path: gradle-test.log
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Fail job when tests failed
+        if: steps.tests.outcome == 'failure'
+        run: exit 1
 
 # ============================================================================
 # 想固定签名（新包可覆盖安装、也能发给别人升级）时：

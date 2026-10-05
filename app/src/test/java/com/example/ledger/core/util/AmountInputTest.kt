@@ -13,13 +13,20 @@ import org.junit.Test
  */
 class AmountInputTest {
 
+    /**
+     * 把一串按键作用到状态上，方便写用例：`AmountInputState().type("1", ".", "5")`。
+     *
+     * 注意 else 分支必须返回 AmountInputState：
+     * 如果写成 `key.forEach { ... }`（返回 Unit），三个分支的类型不一致，
+     * `when` 的类型会被推断成 Any，赋值给 state 就会报类型不匹配。
+     */
     private fun AmountInputState.type(vararg keys: String): AmountInputState {
         var state = this
         keys.forEach { key ->
             state = when (key) {
                 "." -> state.decimal()
                 "⌫" -> state.backspace()
-                else -> key.forEach { digit -> state = state.digit(digit) }
+                else -> key.fold(state) { acc, digit -> acc.digit(digit) }
             }
         }
         return state
