@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">简易记账</string>
+
+    <!-- 底部导航（阶段 4 使用） -->
+    <string name="nav_home">记账</string>
+    <string name="nav_stats">统计</string>
+    <string name="nav_tags">标签</string>
+    <string name="nav_settings">设置</string>
+</resources>

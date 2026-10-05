@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      说明：这里刻意不使用 Material Components 的 XML 主题（parent=Theme.Material3.*），
+      以免为一个空壳主题额外引入 com.google.android.material 依赖。
+      所有视觉都由 Compose 的 LedgerTheme 接管，XML 主题只负责窗口背景与状态栏。
+      注意：只保留 API 26 可用的属性，避免为兼容 27/28 的属性单独建 values-v27 目录。
+    -->
+    <style name="Theme.Ledger" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/window_background</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">true</item>
+    </style>
+</resources>

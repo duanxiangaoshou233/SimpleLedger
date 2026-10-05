@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 应用图标背景色：与设计系统主色一致 -->
+    <color name="ic_launcher_background">#1E7A66</color>
+    <!-- 窗口背景，避免启动瞬间白/黑闪 -->
+    <color name="window_background">#F4F8F6</color>
+</resources>
