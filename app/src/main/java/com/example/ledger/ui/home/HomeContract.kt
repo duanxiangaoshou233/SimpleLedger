@@ -3,6 +3,7 @@ package com.example.ledger.ui.home
 import androidx.compose.runtime.Immutable
 import com.example.ledger.domain.model.TypeTotals
 import com.example.ledger.ui.common.TransactionDayGroup
+import com.example.ledger.ui.common.TransactionUiModel
 
 /**
  * 首页（记账 Tab）UI 状态。

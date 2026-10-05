@@ -20,6 +20,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -153,16 +154,23 @@ class RecordEditorViewModel @Inject constructor(
     /** 改日期：**保留原来的时分秒**（用户只想换一天，不想时间被重置成 00:00） */
     fun onDateChange(date: LocalDate) {
         val current = draft.value
-        val time = current.dateTime.toLocalDateTime().toLocalTime()
-        draft.value = current.copy(dateTime = LocalDateTime.of(date, time).toEpochMillis())
+        val zone = DateTimeUtils.zone
+        val time = Instant.ofEpochMilli(current.dateTime).atZone(zone).toLocalTime()
+        draft.value = current.copy(
+            dateTime = LocalDateTime.of(date, time).atZone(zone).toInstant().toEpochMilli(),
+        )
     }
 
     /** 改时间：保留原来的日期 */
     fun onTimeChange(hour: Int, minute: Int) {
         val current = draft.value
-        val date = current.dateTime.toLocalDate()
+        val zone = DateTimeUtils.zone
+        val date = Instant.ofEpochMilli(current.dateTime).atZone(zone).toLocalDate()
         draft.value = current.copy(
-            dateTime = LocalDateTime.of(date, LocalTime.of(hour, minute)).toEpochMillis(),
+            dateTime = LocalDateTime.of(date, LocalTime.of(hour, minute))
+                .atZone(zone)
+                .toInstant()
+                .toEpochMilli(),
         )
     }
 

@@ -84,7 +84,9 @@ fun DonutChart(
                     detectTapGestures { position ->
                         val center = Offset(size.width / 2f, size.height / 2f)
                         val distance = (position - center).getDistance()
-                        val outer = size.minDimension / 2f
+                        // 注意：pointerInput 里的 size 是 IntSize（只有 width/height），
+                        // minDimension 是 geometry.Size 才有的属性，别混用
+                        val outer = minOf(size.width, size.height) / 2f
                         val inner = outer - strokeWidth.toPx() - 6.dp.toPx()
                         if (distance in inner..outer) {
                             // 画布 0° 在 3 点方向，我们从 -90°（12 点）开始，因此补 90°
